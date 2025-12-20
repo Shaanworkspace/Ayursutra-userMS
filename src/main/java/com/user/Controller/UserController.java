@@ -31,7 +31,6 @@ public class UserController {
 		return userService.mapToResponse(u);
 	}
 
-
 	@GetMapping("/{auth0Id}")
 	public UserResponse getUserByAuth0Id(@PathVariable String auth0Id) {
 		return userService.getUserByAuth0Id(auth0Id);
