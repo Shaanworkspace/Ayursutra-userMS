@@ -28,11 +28,10 @@ public class UserService {
 		Role role = Role.valueOf(request.getRole().toUpperCase());
 
 		User user = User.builder()
-				.auth0Id(request.getAuth0Id())
 				.email(request.getEmail())
 				.firstName(request.getFirstName())
 				.lastName(request.getLastName())
-				.phone(request.getPhone())
+				.password(request.getPassword())
 				.roles(List.of(role))
 				.build();
 

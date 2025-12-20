@@ -24,7 +24,7 @@ public class User {
 	private String email;
 	private String firstName;
 	private String lastName;
-	private String phone;
+	private String password;
 
 	@ElementCollection(fetch = FetchType.EAGER)
 	@CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
