@@ -9,6 +9,7 @@ import com.user.Service.UserService;
 import com.user.DTO.Request.LoginRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,6 +18,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 	private final UserService userService;
 	private final UserRepository userRepository;
+	@GetMapping("/health")
+	public ResponseEntity<String> health() {
+		return ResponseEntity.ok("USER SERVICE UP");
+	}
+
 
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
