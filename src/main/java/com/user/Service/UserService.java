@@ -1,38 +1,50 @@
 package com.user.Service;
 
 
-import com.user.DTO.Request.LoginRequest;
+import com.user.Client.DoctorClient;
+import com.user.Client.PatientClient;
 import com.user.DTO.Request.RegisterRequest;
 import com.user.DTO.Response.UserResponse;
 import com.user.Entity.User;
+import com.user.Enum.ApprovalStatus;
 import com.user.Enum.Role;
 import com.user.Repository.UserRepository;
-import jakarta.transaction.Transactional;
+import com.user.JWT.JwtUtil;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
-public class UserService {
-
+public class UserService implements UserDetailsService {
+	private final PatientClient patientClient;
+	private final DoctorClient doctorClient;
 	private final UserRepository userRepository;
+
+	private final JwtUtil jwtUtil;
 
 	public UserResponse registerUser(RegisterRequest request) {
 		if (userRepository.existsByEmail(request.getEmail())) {
 			throw new IllegalArgumentException("User already exists with email " + request.getEmail());
 		}
 
-		Role role = Role.valueOf(request.getRole().toUpperCase());
+		Role role = request.getRole();
 
 		User user = User.builder()
 				.email(request.getEmail())
-				.firstName(request.getFirstName())
-				.lastName(request.getLastName())
 				.password(request.getPassword())
-				.roles(List.of(role))
+				.roles(Collections.singleton(request.getRole()))
+				.approvalStatus(
+						(role == Role.PATIENT)
+								? ApprovalStatus.APPROVED
+								: ApprovalStatus.PENDING
+				)
 				.build();
 
 		User saved = userRepository.save(user);
@@ -40,20 +52,17 @@ public class UserService {
 		return mapToResponse(saved);
 	}
 
-	public UserResponse getUserByAuth0Id(String auth0Id) {
-		User user = userRepository.findByAuth0Id(auth0Id)
-				.orElseThrow(() -> new RuntimeException("User not found with auth0Id: " + auth0Id));
-		return mapToResponse(user);
-	}
 
 	public UserResponse mapToResponse(User user) {
 		return UserResponse.builder()
 				.id(user.getId())
-				.auth0Id(user.getAuth0Id())
 				.email(user.getEmail())
-				.firstName(user.getFirstName())
-				.lastName(user.getLastName())
 				.roles(user.getRoles())
 				.build();
+	}
+
+	@Override
+	public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+		return userRepository.findByEmail(username).orElseThrow();
 	}
 }

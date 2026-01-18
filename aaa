@@ -4,3 +4,11 @@ DB_PASSWORD=1234
 DB_DDL=create
 
 
+services.doctor.url=http://localhost:8081
+services.patient.url=http://localhost:8082
+services.therapist.url=http://localhost:8083
+services.user.url=http://localhost:8086
+services.api.url=http://localhost:8085
+
+
+jwt.secretkeyENV = asdfkljhasfhkdjlashfjksdkfhioqwteiruncvzxmiye

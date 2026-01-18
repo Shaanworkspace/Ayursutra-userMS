@@ -1,16 +1,15 @@
 package com.user.DTO.Request;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.user.Enum.Role;
+import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class RegisterRequest {
 	private String email;
-	private String firstName;
-	private String lastName;
 	private String password;
-	private String role;
+	private Role role;
 }

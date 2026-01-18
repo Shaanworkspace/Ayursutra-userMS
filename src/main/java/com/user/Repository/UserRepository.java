@@ -2,11 +2,13 @@ package com.user.Repository;
 
 
 import com.user.Entity.User;
+import com.user.Enum.AuthProviderName;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+public interface UserRepository extends JpaRepository<User, String> {
 	Optional<User> findByEmail(String email);
-	Optional<User> findByAuth0Id(String auth0Id);
 	boolean existsByEmail(String email);
+
+	Optional<User> findByOauthProviderIdAndOauthProviderName(String registrationId, AuthProviderName authProviderName);
 }
