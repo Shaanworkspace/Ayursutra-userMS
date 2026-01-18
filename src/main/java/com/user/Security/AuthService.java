@@ -52,7 +52,7 @@ public class AuthService {
 		String jwt = generateJwtForUser(user);
 		UsernamePasswordAuthenticationToken authentication =
 				new UsernamePasswordAuthenticationToken(
-						user,
+						user.getId(),
 						jwt,
 						user.getAuthorities()
 				);
@@ -61,9 +61,10 @@ public class AuthService {
 
 		switch (role) {
 
-			case PATIENT -> {
+			case Role.PATIENT -> {
+				log.info("Lets Sync the PATIENT");
 				syncPatientIfRequired(oAuth2User, user, registrationId);
-
+				log.info("Complete Sync the PATIENT");
 				return ResponseEntity.ok(
 						LoginResponse.builder()
 								.jwt(jwt)
@@ -73,9 +74,9 @@ public class AuthService {
 				);
 			}
 
-			case DOCTOR, THERAPIST -> {
+			case Role.DOCTOR -> {
 
-				if (user.getApprovalStatus() == ApprovalStatus.APPROVED) {
+				if (user.getApprovalStatusOfDoctor() == ApprovalStatus.APPROVED) {
 
 					return ResponseEntity.ok(
 							LoginResponse.builder()
@@ -87,7 +88,39 @@ public class AuthService {
 
 				}
 
-				if (user.getApprovalStatus() == ApprovalStatus.PENDING) {
+				if (user.getApprovalStatusOfDoctor() == ApprovalStatus.PENDING) {
+					return ResponseEntity.status(202).body(
+							LoginResponse.builder()
+									.role(role)
+									.approvalStatus(ApprovalStatus.PENDING)
+									.build()
+					);
+				}
+
+				// REJECTED
+				return ResponseEntity.status(403).body(
+						LoginResponse.builder()
+								.role(role)
+								.approvalStatus(ApprovalStatus.REJECTED)
+								.rejectionReason(user.getRejectionReason())
+								.build()
+				);
+			}
+			case  Role.THERAPIST -> {
+
+				if (user.getApprovalStatusOfTherapist() == ApprovalStatus.APPROVED) {
+
+					return ResponseEntity.ok(
+							LoginResponse.builder()
+									.jwt(jwt)
+									.role(role)
+									.approvalStatus(ApprovalStatus.APPROVED)
+									.build()
+					);
+
+				}
+
+				if (user.getApprovalStatusOfTherapist() == ApprovalStatus.PENDING) {
 					return ResponseEntity.status(202).body(
 							LoginResponse.builder()
 									.role(role)
@@ -129,19 +162,21 @@ public class AuthService {
 						)
 						.orElse(null);
 
-		if (user != null) return user;
+		if (user != null) {
+			return userService.addRoleToExistingUser(user, role);
+		}
 
 		User userByEmail =
 				userRepository.findByEmail(email).orElse(null);
 
 		if (userByEmail != null) {
 			log.info(
-					"Email already registered with another provider"
+					"Email already registered with another provider : {}",email
 			);
-			return userByEmail;
+			return userService.addRoleToExistingUser(userByEmail, role);
 		}
 
-		// ---- signup flow ----
+		// ---- Get new Email By Platform----
 		String fetchEmail =
 				authUtil.getProviderEmailFromUser(
 						oAuth2User,
@@ -158,6 +193,11 @@ public class AuthService {
 						RegisterRequest.builder()
 								.email(fetchEmail)
 								.password(passwordEncoder.encode(fetchEmail))
+								.approvalStatus(
+										(role == Role.PATIENT)
+												? ApprovalStatus.APPROVED
+												: ApprovalStatus.PENDING
+								)
 								.role(role)
 								.build()
 				);
@@ -180,9 +220,11 @@ public class AuthService {
 
 		Boolean exists = patientClient.checkPatientByEmail(email);
 
-		if (Boolean.TRUE.equals(exists)) return;
 
-		patientClient.storePatient(
+		if (Boolean.TRUE.equals(exists)) return;
+		log.info("Patient Not Exist in Patient DB Saving it ...");
+
+		Object o = patientClient.storePatient(
 				PatientRegisterRequestDTO.builder()
 						.userId(user.getId())
 						.email(email)
@@ -200,6 +242,7 @@ public class AuthService {
 						)
 						.build()
 		);
+		log.info("SuccessFully Sync Id: {} with object : {}",user.getId(),o);
 	}
 
 

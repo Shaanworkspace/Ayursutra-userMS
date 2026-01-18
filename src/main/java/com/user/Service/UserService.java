@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -30,27 +31,50 @@ public class UserService implements UserDetailsService {
 	private final JwtUtil jwtUtil;
 
 	public UserResponse registerUser(RegisterRequest request) {
+
 		if (userRepository.existsByEmail(request.getEmail())) {
-			throw new IllegalArgumentException("User already exists with email " + request.getEmail());
+			throw new IllegalArgumentException(
+					"User already exists with email " + request.getEmail()
+			);
 		}
 
 		Role role = request.getRole();
+		ApprovalStatus status = request.getApprovalStatus();
 
-		User user = User.builder()
+		User.UserBuilder builder = User.builder()
 				.email(request.getEmail())
 				.password(request.getPassword())
-				.roles(Collections.singleton(request.getRole()))
-				.approvalStatus(
-						(role == Role.PATIENT)
-								? ApprovalStatus.APPROVED
-								: ApprovalStatus.PENDING
-				)
-				.build();
+				.roles(Set.of(role));
 
-		User saved = userRepository.save(user);
+		switch (role) {
 
+			case PATIENT -> {
+				// Patient is auto-approved (no column needed)
+			}
+
+			case DOCTOR -> {
+				builder.approvalStatusOfDoctor(
+						status != null ? status : ApprovalStatus.PENDING
+				);
+			}
+
+			case THERAPIST -> {
+				builder.approvalStatusOfTherapist(
+						status != null ? status : ApprovalStatus.PENDING
+				);
+			}
+
+			case ADMIN -> {
+				builder.approvalStatusOfAdmin(
+						status != null ? status : ApprovalStatus.PENDING
+				);
+			}
+		}
+
+		User saved = userRepository.save(builder.build());
 		return mapToResponse(saved);
 	}
+
 
 
 	public UserResponse mapToResponse(User user) {
@@ -59,6 +83,26 @@ public class UserService implements UserDetailsService {
 				.email(user.getEmail())
 				.roles(user.getRoles())
 				.build();
+	}
+	public User addRoleToExistingUser(User user, Role role) {
+		if (user.getRoles().contains(role)) {
+			return user;
+		}
+
+		user.getRoles().add(role);
+		switch (role) {
+			case DOCTOR -> {
+				user.setApprovalStatusOfDoctor(ApprovalStatus.PENDING);
+			}
+			case THERAPIST -> {
+				user.setApprovalStatusOfTherapist(ApprovalStatus.PENDING);
+			}
+			case ADMIN -> {
+				user.setApprovalStatusOfAdmin(ApprovalStatus.PENDING);
+			}
+		}
+
+		return userRepository.save(user);
 	}
 
 	@Override

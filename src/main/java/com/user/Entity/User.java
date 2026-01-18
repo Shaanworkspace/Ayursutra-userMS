@@ -40,13 +40,33 @@ public class User implements UserDetails {
 
 	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private ApprovalStatus approvalStatus;
+	private ApprovalStatus approvalStatusOfDoctor;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ApprovalStatus approvalStatusOfTherapist;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	private ApprovalStatus approvalStatusOfAdmin;
 
 	@Column(length = 500)
 	private String rejectionReason;
-
 	@PrePersist
-	public void generateId() {
+	public void prePersistDefaults() {
+
+		if (approvalStatusOfDoctor == null) {
+			approvalStatusOfDoctor = ApprovalStatus.NOREQUEST;
+		}
+
+		if (approvalStatusOfTherapist == null) {
+			approvalStatusOfTherapist = ApprovalStatus.NOREQUEST;
+		}
+
+		if (approvalStatusOfAdmin == null) {
+			approvalStatusOfAdmin = ApprovalStatus.NOREQUEST;
+		}
+
 		if (this.id == null) {
 			this.id = UUID.randomUUID().toString();
 		}

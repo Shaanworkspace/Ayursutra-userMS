@@ -33,29 +33,89 @@ public class LoginService {
 		);
 
 		User user = (User) auth.getPrincipal();
+		Role role = request.getRole();
 
-		if (
-				(request.getRole() == Role.DOCTOR || request.getRole() == Role.THERAPIST)
-						&& user.getApprovalStatus() != ApprovalStatus.APPROVED
-		) {
-			throw new RuntimeException(
-					user.getApprovalStatus() == ApprovalStatus.PENDING
-							? "Your account is under review"
-							: "Your registration was rejected: " + user.getRejectionReason()
+		// Role assigned check
+		if (!user.getRoles().contains(role)) {
+			return LoginResponse.builder()
+					.role(role)
+					.approvalStatus(ApprovalStatus.NOREQUEST)
+					.build();
+		}
+
+		// ===== PATIENT =====
+		if (role == Role.PATIENT) {
+			return LoginResponse.builder()
+					.jwt(jwtUtil.generateToken(user))
+					.role(Role.PATIENT)
+					.approvalStatus(ApprovalStatus.APPROVED)
+					.build();
+		}
+
+		// ===== DOCTOR =====
+		if (role == Role.DOCTOR) {
+			return buildRoleBasedResponse(
+					user,
+					role,
+					user.getApprovalStatusOfDoctor()
 			);
 		}
 
-
-		if (!user.getRoles().contains(request.getRole())) {
-			throw new RuntimeException("Role not assigned");
+		// ===== THERAPIST =====
+		if (role == Role.THERAPIST) {
+			return buildRoleBasedResponse(
+					user,
+					role,
+					user.getApprovalStatusOfTherapist()
+			);
 		}
 
-		String token = jwtUtil.generateToken(user);
-
-		return LoginResponse.builder()
-				.jwt(token)
-				.role(request.getRole())
-				.build();
+		// fallback (should never happen)
+		throw new RuntimeException("Invalid role");
 	}
+
+
+
+	private LoginResponse buildRoleBasedResponse(
+			User user,
+			Role role,
+			ApprovalStatus status
+	) {
+		switch (status) {
+
+			case APPROVED -> {
+				return LoginResponse.builder()
+						.jwt(jwtUtil.generateToken(user))
+						.role(role)
+						.approvalStatus(ApprovalStatus.APPROVED)
+						.build();
+			}
+
+			case PENDING -> {
+				return LoginResponse.builder()
+						.role(role)
+						.approvalStatus(ApprovalStatus.PENDING)
+						.build();
+			}
+
+			case REJECTED -> {
+				return LoginResponse.builder()
+						.role(role)
+						.approvalStatus(ApprovalStatus.REJECTED)
+						.rejectionReason(user.getRejectionReason())
+						.build();
+			}
+
+			case NOREQUEST -> {
+				return LoginResponse.builder()
+						.role(role)
+						.approvalStatus(ApprovalStatus.NOREQUEST)
+						.build();
+			}
+		}
+
+		throw new RuntimeException("Unhandled approval status");
+	}
+
 }
 
