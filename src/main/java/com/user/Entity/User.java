@@ -29,6 +29,9 @@ public class User implements UserDetails {
 	private String email;
 	private String password;
 
+	private String firstName;
+	private String lastName;
+
 	@Enumerated(EnumType.STRING)
 	private AuthProviderName oauthProviderName;
 	private String oauthProviderId;

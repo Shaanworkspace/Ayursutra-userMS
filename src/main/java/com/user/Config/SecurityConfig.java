@@ -32,7 +32,10 @@ public class SecurityConfig {
 								"/api/user/pre-login",
 								"/api/user/register",
 								"/api/user/health",
-								"/oauth2/**"
+								"/api/user",
+								"/oauth2/**",
+								"/api/user/doctor/**",
+								"/api/user/therapist/**"
 						).permitAll()
 						.anyRequest().authenticated()
 				)

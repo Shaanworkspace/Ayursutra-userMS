@@ -1,7 +1,7 @@
 package com.user.Security;
 
+import com.user.Client.DoctorClient;
 import com.user.Client.PatientClient;
-import com.user.DTO.Request.PatientRegisterRequestDTO;
 import com.user.DTO.Request.RegisterRequest;
 
 import com.user.DTO.Response.LoginResponse;
@@ -23,15 +23,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AuthService {
 
 	private final PasswordEncoder passwordEncoder;
-
+	private final DoctorClient doctorClient;
 	private final AuthUtil authUtil;
 	private final JwtUtil jwtUtil;
 	private final UserRepository userRepository;
@@ -63,7 +61,7 @@ public class AuthService {
 
 			case Role.PATIENT -> {
 				log.info("Lets Sync the PATIENT");
-				syncPatientIfRequired(oAuth2User, user, registrationId);
+				userService.syncPatientIfRequired( user);
 				log.info("Complete Sync the PATIENT");
 				return ResponseEntity.ok(
 						LoginResponse.builder()
@@ -193,6 +191,18 @@ public class AuthService {
 						RegisterRequest.builder()
 								.email(fetchEmail)
 								.password(passwordEncoder.encode(fetchEmail))
+								.firstName(
+										authUtil.getFirstNameFromUser(
+												oAuth2User,
+												registrationId
+										)
+								)
+								.lastName(
+										authUtil.getLastNameFromUser(
+												oAuth2User,
+												registrationId
+										)
+								)
 								.approvalStatus(
 										(role == Role.PATIENT)
 												? ApprovalStatus.APPROVED
@@ -209,40 +219,6 @@ public class AuthService {
 
 	private String generateJwtForUser(User user) {
 		return jwtUtil.generateToken(user);
-	}
-
-	private void syncPatientIfRequired(
-			OAuth2User oAuth2User,
-			User user,
-			String registrationId
-	) {
-		String email = user.getEmail();
-
-		Boolean exists = patientClient.checkPatientByEmail(email);
-
-
-		if (Boolean.TRUE.equals(exists)) return;
-		log.info("Patient Not Exist in Patient DB Saving it ...");
-
-		Object o = patientClient.storePatient(
-				PatientRegisterRequestDTO.builder()
-						.userId(user.getId())
-						.email(email)
-						.firstName(
-								authUtil.getFirstNameFromUser(
-										oAuth2User,
-										registrationId
-								)
-						)
-						.lastName(
-								authUtil.getLastNameFromUser(
-										oAuth2User,
-										registrationId
-								)
-						)
-						.build()
-		);
-		log.info("SuccessFully Sync Id: {} with object : {}",user.getId(),o);
 	}
 
 
