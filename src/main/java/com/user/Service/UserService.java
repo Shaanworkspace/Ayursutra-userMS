@@ -124,6 +124,7 @@ public class UserService implements UserDetailsService {
 
 	public void syncPatientIfRequired(User user) {
 		boolean exists = patientClient.checkPatientByUserId(user.getId());
+
 		log.info("Patient Exist in Patient DB");
 
 		if (exists) return;
@@ -138,8 +139,8 @@ public class UserService implements UserDetailsService {
 
 
 	public void syncDoctorIfRequired(User user) {
-		Boolean exists = doctorClient.checkDoctorByUserId(user.getId());
-		if (Boolean.TRUE.equals(exists)) return;
+		boolean exists = doctorClient.checkDoctorByUserId(user.getId());
+		if (exists) return;
 
 		log.info("Saving in Doctor DB ...");
 
@@ -151,19 +152,18 @@ public class UserService implements UserDetailsService {
 
 
 	public void syncTherapistIfRequired(User user) {
-		Boolean exists = therapistClient.checkTherapistByUserId(user.getId());
-		if (Boolean.TRUE.equals(exists)) return;
+		boolean exists = therapistClient.checkTherapistByEmailId(user.getEmail());
+		if (exists) return;
 
 		log.info("Saving in Therapist DB ...");
-
 		Object o = therapistClient.storeTherapist(toRegisterRequest(user));
-
 		log.info("SuccessFully Sync Therapist Id: {} with object : {}", user.getId(), o);
 	}
 
 
 	private RegisterRequestToOtherServices toRegisterRequest(User user) {
 		return RegisterRequestToOtherServices.builder()
+				.email(user.getEmail())
 				.userId(user.getId())
 				.name(user.getFirstName() +" "+user.getLastName())
 				.password(user.getPassword())

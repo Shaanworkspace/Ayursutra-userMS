@@ -12,8 +12,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 )
 public interface TherapistClient {
 
-	@PostMapping("/api/therapist")
+	@PostMapping("/api/therapists")
 	Object storeTherapist(RegisterRequestToOtherServices build);
-	@GetMapping("/api/therapist/exist/{id}")
-	Boolean checkTherapistByUserId(@PathVariable String id);
+
+	@GetMapping("/api/therapists/exist/{email}")
+	boolean checkTherapistByEmailId(@PathVariable String email) ;
 }

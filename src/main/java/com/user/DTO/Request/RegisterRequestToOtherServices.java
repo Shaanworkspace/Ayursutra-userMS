@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class RegisterRequestToOtherServices {
 	// Used to Transfer Registration from User -> Patient and Doctor and other Services
+	private String email;
 	private String userId;
 	private String name;
 	private String password;

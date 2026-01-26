@@ -51,7 +51,7 @@ public class AuthService {
 
 		UsernamePasswordAuthenticationToken authentication =
 				new UsernamePasswordAuthenticationToken(
-						user,
+						user.getId(),
 						jwt,
 						user.getAuthorities()
 				);
@@ -96,6 +96,9 @@ public class AuthService {
 			}
 
 			case Role.THERAPIST -> {
+				log.info("Lets Sync the Therapist");
+				userService.syncTherapistIfRequired(user);
+				log.info("Complete Sync the Therapist with user : {}",user);
 				return ResponseEntity
 						.status(
 								user.getApprovalStatusOfTherapist() == ApprovalStatus.APPROVED
@@ -113,8 +116,6 @@ public class AuthService {
 								)
 						);
 			}
-
-
 			default -> throw new IllegalStateException("Unexpected role: " + role);
 		}
 	}

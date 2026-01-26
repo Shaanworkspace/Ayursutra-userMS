@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 )
 public interface DoctorClient {
 	@GetMapping("/api/doctors/check/{userId}")
-	Boolean checkDoctorByUserId(@PathVariable String userId);
+	boolean checkDoctorByUserId(@PathVariable String userId);
 
 	@PostMapping("/api/doctors")
 	Object storeDoctor(RegisterRequestToOtherServices build);
