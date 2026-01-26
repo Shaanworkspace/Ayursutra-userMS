@@ -21,7 +21,7 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {    // STEP 2: start OAuth
+public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 	private final AuthService authService;
 	private final ObjectMapper objectMapper;
@@ -53,6 +53,7 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {    /
 		//Got the user
 		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role);
 
+		log.info("Got login response in OAuthSuccessHandler : {}",loginResponse);
 		String payload = objectMapper.writeValueAsString(loginResponse.getBody());
 
 		response.setContentType("text/html;charset=UTF-8");

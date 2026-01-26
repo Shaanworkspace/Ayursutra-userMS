@@ -29,13 +29,11 @@ import org.springframework.stereotype.Service;
 public class AuthService {
 
 	private final PasswordEncoder passwordEncoder;
-	private final DoctorClient doctorClient;
 	private final AuthUtil authUtil;
 	private final JwtUtil jwtUtil;
 	private final UserRepository userRepository;
 	private final UserService userService;
 	private final LoginService loginService;
-	private final PatientClient patientClient;
 
 	public ResponseEntity<LoginResponse> handleOAuth2LoginRequest(
 			OAuth2User oAuth2User,
@@ -43,14 +41,17 @@ public class AuthService {
 			Role role
 	) {
 
+		log.info("handleOAuth2LoginReuqest with user :{} and role : {}",oAuth2User,role);
 		// Register / Fetch user
 		User user = findOrCreateUser(oAuth2User, registrationId,role);
 
 		// Generate JWT
-		String jwt = generateJwtForUser(user);
+		String jwt = jwtUtil.generateUserToServiceToken(user);
+		log.info("Generated Jwt successfully:{}",jwt);
+
 		UsernamePasswordAuthenticationToken authentication =
 				new UsernamePasswordAuthenticationToken(
-						user.getId(),
+						user,
 						jwt,
 						user.getAuthorities()
 				);
@@ -58,88 +59,66 @@ public class AuthService {
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 
 		switch (role) {
-
 			case Role.PATIENT -> {
 				log.info("Lets Sync the PATIENT");
-				userService.syncPatientIfRequired( user);
-				log.info("Complete Sync the PATIENT");
-				return ResponseEntity.ok(
-						LoginResponse.builder()
-								.jwt(jwt)
-								.role(role)
-								.approvalStatus(ApprovalStatus.APPROVED)
-								.build()
+				userService.syncPatientIfRequired(user);
+				log.info("Complete Sync the PATIENT with user : {}",user);
+				return ResponseEntity.ok( loginService.loginToLoginResponse(
+								user,
+								Role.PATIENT,
+								ApprovalStatus.APPROVED,
+								true
+						)
 				);
 			}
 
 			case Role.DOCTOR -> {
-
-				if (user.getApprovalStatusOfDoctor() == ApprovalStatus.APPROVED) {
-
-					return ResponseEntity.ok(
-							LoginResponse.builder()
-									.jwt(jwt)
-									.role(role)
-									.approvalStatus(ApprovalStatus.APPROVED)
-									.build()
-					);
-
-				}
-
-				if (user.getApprovalStatusOfDoctor() == ApprovalStatus.PENDING) {
-					return ResponseEntity.status(202).body(
-							LoginResponse.builder()
-									.role(role)
-									.approvalStatus(ApprovalStatus.PENDING)
-									.build()
-					);
-				}
-
-				// REJECTED
-				return ResponseEntity.status(403).body(
-						LoginResponse.builder()
-								.role(role)
-								.approvalStatus(ApprovalStatus.REJECTED)
-								.rejectionReason(user.getRejectionReason())
-								.build()
-				);
+				// For Dev Propose Only
+				log.info("Lets Sync the Doc");
+				userService.syncDoctorIfRequired(user);
+				log.info("Complete Sync the Doc with user : {}",user);
+				return ResponseEntity
+						.status(
+								user.getApprovalStatusOfDoctor() == ApprovalStatus.APPROVED
+										? 200
+										: user.getApprovalStatusOfDoctor() == ApprovalStatus.PENDING
+										? 202
+										: 403
+						)
+						.body(
+								loginService.loginToLoginResponse(
+										user,
+										role,
+										user.getApprovalStatusOfDoctor(),
+										user.getApprovalStatusOfDoctor() == ApprovalStatus.APPROVED
+								)
+						);
 			}
-			case  Role.THERAPIST -> {
 
-				if (user.getApprovalStatusOfTherapist() == ApprovalStatus.APPROVED) {
-
-					return ResponseEntity.ok(
-							LoginResponse.builder()
-									.jwt(jwt)
-									.role(role)
-									.approvalStatus(ApprovalStatus.APPROVED)
-									.build()
-					);
-
-				}
-
-				if (user.getApprovalStatusOfTherapist() == ApprovalStatus.PENDING) {
-					return ResponseEntity.status(202).body(
-							LoginResponse.builder()
-									.role(role)
-									.approvalStatus(ApprovalStatus.PENDING)
-									.build()
-					);
-				}
-
-				// REJECTED
-				return ResponseEntity.status(403).body(
-						LoginResponse.builder()
-								.role(role)
-								.approvalStatus(ApprovalStatus.REJECTED)
-								.rejectionReason(user.getRejectionReason())
-								.build()
-				);
+			case Role.THERAPIST -> {
+				return ResponseEntity
+						.status(
+								user.getApprovalStatusOfTherapist() == ApprovalStatus.APPROVED
+										? 200
+										: user.getApprovalStatusOfTherapist() == ApprovalStatus.PENDING
+										? 202
+										: 403
+						)
+						.body(
+								loginService.loginToLoginResponse(
+										user,
+										role,
+										user.getApprovalStatusOfTherapist(),
+										user.getApprovalStatusOfTherapist() == ApprovalStatus.APPROVED
+								)
+						);
 			}
+
 
 			default -> throw new IllegalStateException("Unexpected role: " + role);
 		}
 	}
+
 	private User findOrCreateUser(
 			OAuth2User oAuth2User,
 			String registrationId,
@@ -186,6 +165,7 @@ public class AuthService {
 			throw new IllegalArgumentException("Invalid email");
 		}
 
+		// Decide status approval while register
 		UserResponse userResponse =
 				userService.registerUser(
 						RegisterRequest.builder()
@@ -204,9 +184,7 @@ public class AuthService {
 										)
 								)
 								.approvalStatus(
-										(role == Role.PATIENT)
-												? ApprovalStatus.APPROVED
-												: ApprovalStatus.PENDING
+										ApprovalStatus.APPROVED
 								)
 								.role(role)
 								.build()
@@ -216,12 +194,5 @@ public class AuthService {
 				.findById(userResponse.getId())
 				.orElseThrow();
 	}
-
-	private String generateJwtForUser(User user) {
-		return jwtUtil.generateToken(user);
-	}
-
-
-
 
 }

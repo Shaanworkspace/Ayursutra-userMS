@@ -73,7 +73,7 @@ public class AuthUtil {
 		};
 	}
 	public String getFirstNameFromUser(OAuth2User oAuth2User, String registrationId) {
-
+		log.info("Oauth for finding first name : {}",oAuth2User);
 		return switch (registrationId.toLowerCase()) {
 
 			case "google" -> {
@@ -90,7 +90,6 @@ public class AuthUtil {
 				}
 				yield "Patient";
 			}
-
 			default -> "Patient";
 		};
 	}

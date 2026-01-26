@@ -1,6 +1,6 @@
 package com.user.Config;
 
-import com.user.JWT.Filters.JwtAuthFilter;
+import com.user.JWT.Filters.JwtAuthenticationFilter;
 import com.user.Security.oAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,11 +19,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Slf4j
 public class SecurityConfig {
 
-	private final JwtAuthFilter jwtAuthFilter;
+	private final JwtAuthenticationFilter jwtAuthenticationFilter;
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http,oAuth2SuccessHandler successHandler) throws Exception {
-
 		http
+				.cors(AbstractHttpConfigurer::disable)
 				.csrf(AbstractHttpConfigurer::disable)
 				.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
@@ -35,11 +35,18 @@ public class SecurityConfig {
 								"/api/user",
 								"/oauth2/**",
 								"/api/user/doctor/**",
-								"/api/user/therapist/**"
+								"/api/user/therapist/**",
+								"/login/oauth2/**",
+
+								// Swagger paths
+								"/swagger-ui.html",
+								"/swagger-ui/**",
+								"/v3/api-docs",
+								"/v3/api-docs/**"
 						).permitAll()
 						.anyRequest().authenticated()
 				)
-				.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 				.oauth2Login(oAuth2->oAuth2
 						.failureHandler((request,response,exception)->{
 							log.error("OAuth2 Error: {}",exception.getMessage());

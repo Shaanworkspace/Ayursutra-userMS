@@ -1,6 +1,6 @@
 package com.user.Client;
 
-import com.user.DTO.Request.RegisterRequestDTO;
+import com.user.DTO.Request.RegisterRequestToOtherServices;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 public interface TherapistClient {
 
 	@PostMapping("/api/therapist")
-	Object storeTherapist(RegisterRequestDTO build);
+	Object storeTherapist(RegisterRequestToOtherServices build);
 	@GetMapping("/api/therapist/exist/{id}")
-	Boolean checkTherapistByUserId(String id);
+	Boolean checkTherapistByUserId(@PathVariable String id);
 }

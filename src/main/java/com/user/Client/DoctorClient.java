@@ -1,7 +1,7 @@
 package com.user.Client;
 
 //import com.user.DTO.Response.DoctorResponse;
-import com.user.DTO.Request.RegisterRequestDTO;
+import com.user.DTO.Request.RegisterRequestToOtherServices;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,5 +16,5 @@ public interface DoctorClient {
 	Boolean checkDoctorByUserId(@PathVariable String userId);
 
 	@PostMapping("/api/doctors")
-	Object storeDoctor(RegisterRequestDTO build);
+	Object storeDoctor(RegisterRequestToOtherServices build);
 }

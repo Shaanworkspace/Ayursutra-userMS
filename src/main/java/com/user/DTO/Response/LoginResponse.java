@@ -11,5 +11,5 @@ public class LoginResponse {
 	private String jwt;
 	public Role role;
 	private ApprovalStatus approvalStatus;
-	private String rejectionReason;
+	private UserResponse userResponse;
 }
