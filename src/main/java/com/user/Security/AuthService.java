@@ -46,7 +46,7 @@ public class AuthService {
 		User user = findOrCreateUser(oAuth2User, registrationId,role);
 
 		// Generate JWT
-		String jwt = jwtUtil.generateUserToServiceToken(user);
+		String jwt = jwtUtil.generateUserToServiceToken(user,role);
 		log.info("Generated Jwt successfully:{}",jwt);
 
 		UsernamePasswordAuthenticationToken authentication =

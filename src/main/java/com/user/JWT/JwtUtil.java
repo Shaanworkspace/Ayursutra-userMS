@@ -1,6 +1,7 @@
 package com.user.JWT;
 
 import com.user.Entity.User;
+import com.user.Enum.Role;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -31,10 +32,11 @@ public class JwtUtil {
 		return claims.getSubject();
 	}
 
-	public String generateUserToServiceToken(User user){
+	public String generateUserToServiceToken(User user, Role activeRole){
 		return Jwts.builder()
 				.subject(user.getEmail())
 				.claim("userId", user.getId())
+				.claim("role", activeRole.name())
 				.issuedAt(new Date())
 				.expiration(new Date(System.currentTimeMillis()+1000*60*60*48)) //2 Days
 				.signWith(getSecretKey())

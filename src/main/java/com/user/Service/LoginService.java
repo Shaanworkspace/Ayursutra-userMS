@@ -130,7 +130,7 @@ public class LoginService {
 			boolean includeJwt
 	) {
 		return LoginResponse.builder()
-				.jwt(includeJwt ? jwtUtil.generateUserToServiceToken(user) : null)
+				.jwt(includeJwt ? jwtUtil.generateUserToServiceToken(user, role) : null)
 				.role(role)
 				.approvalStatus(status)
 				.userResponse(
