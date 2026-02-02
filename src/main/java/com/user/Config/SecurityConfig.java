@@ -25,7 +25,7 @@ public class SecurityConfig {
 	public SecurityFilterChain filterChain(HttpSecurity http,oAuth2SuccessHandler successHandler) throws Exception {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
-				.cors(Customizer.withDefaults())
+				.cors(AbstractHttpConfigurer::disable)
 				.sessionManagement(session->session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
