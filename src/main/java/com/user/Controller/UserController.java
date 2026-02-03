@@ -12,12 +12,14 @@ import com.user.Service.UserService;
 import com.user.DTO.Request.LoginRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -48,6 +50,21 @@ public class UserController {
 		return ResponseEntity.ok().build();
 	}
 
+
+	@GetMapping("/oauth2/start/{provider}")
+	public void startOAuth2(
+			HttpServletRequest request,
+			HttpServletResponse response,
+			@PathVariable String provider,
+			@RequestParam String role
+	) throws IOException {
+		// Store role in THIS session
+		request.getSession().setAttribute("OAUTH_ROLE", role);
+		log.info("Stored role {} in session, redirecting to OAuth2", role);
+
+		// Redirect in the SAME session to OAuth2
+		response.sendRedirect("/oauth2/authorization/" + provider);
+	}
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	public UserResponse register(@RequestBody RegisterRequest request) {

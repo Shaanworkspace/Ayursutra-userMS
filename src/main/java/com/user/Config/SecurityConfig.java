@@ -40,13 +40,16 @@ public class SecurityConfig {
 		http
 				.csrf(AbstractHttpConfigurer::disable)
 				.cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
-				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.sessionManagement(session -> session
+						.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+				)
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers(
 								"/api/user/login",
 								"/api/user/pre-login",
 								"/api/user/register",
 								"/api/user/health",
+								"/api/user/oauth2/start/**",
 								"/api/user",
 								"/oauth2/**",
 								"/api/user/doctor/**",
