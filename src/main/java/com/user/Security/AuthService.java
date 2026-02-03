@@ -120,6 +120,8 @@ public class AuthService {
 			default -> throw new IllegalStateException("Unexpected role: " + role);
 		}
 	}
+
+
 	private User findOrCreateUser(
 			OAuth2User oAuth2User,
 			String registrationId,

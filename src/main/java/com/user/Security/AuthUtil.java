@@ -94,47 +94,42 @@ public class AuthUtil {
 		return null;
 	}
 	public String getLastNameFromUser(OAuth2User oAuth2User, String registrationId) {
+		Map<String, Object> attributes = oAuth2User.getAttributes();
 
 		return switch (registrationId.toLowerCase()) {
-
 			case "google" -> {
-				String familyName = oAuth2User.getAttribute("family_name");
-				yield (familyName != null && !familyName.isBlank())
-						? familyName
-						: "User";
+				String familyName = (String) attributes.get("family_name");
+				yield (familyName != null && !familyName.isBlank()) ? familyName : "";
 			}
-
 			case "github" -> {
-				String fullName = oAuth2User.getAttribute("name");
-				if (fullName != null && !fullName.isBlank()) {
+				String fullName = (String) attributes.get("name");
+				if (fullName != null && fullName.contains(" ")) {
 					String[] parts = fullName.split(" ");
-					yield parts.length > 1 ? parts[1] : "User";
+					yield parts[parts.length - 1];
 				}
-				yield "User";
+				yield "";
 			}
-
-			default -> "User";
+			default -> "";
 		};
 	}
+
 	public String getFirstNameFromUser(OAuth2User oAuth2User, String registrationId) {
-		log.info("Oauth for finding first name : {}",oAuth2User);
+		Map<String, Object> attributes = oAuth2User.getAttributes();
+
 		return switch (registrationId.toLowerCase()) {
-
 			case "google" -> {
-				String givenName = oAuth2User.getAttribute("given_name");
-				yield (givenName != null && !givenName.isBlank())
-						? givenName
-						: "Patient";
+				String name = (String) attributes.getOrDefault("given_name", attributes.get("name"));
+				yield (name != null && !name.isBlank()) ? name : "User";
 			}
-
 			case "github" -> {
-				String fullName = oAuth2User.getAttribute("name");
-				if (fullName != null && !fullName.isBlank()) {
-					yield fullName.split(" ")[0];
+				String name = (String) attributes.get("name"); // This can be null
+				if (name != null && !name.isBlank()) {
+					yield name.split(" ")[0];
 				}
-				yield "Patient";
+				// Fallback to login (username) if name is hidden
+				yield (String) attributes.get("login");
 			}
-			default -> "Patient";
+			default -> "User";
 		};
 	}
 

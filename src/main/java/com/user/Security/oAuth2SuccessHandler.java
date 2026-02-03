@@ -28,7 +28,7 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 	private final AuthService authService;
 	private final ObjectMapper objectMapper;
 	private final OAuth2AuthorizedClientService authorizedClientService;
-	// ye method Github ya google se aay data ko (jo ki in the form of token h usko extract krega)
+
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 		OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
@@ -51,9 +51,10 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 		if (roleParam == null) {
 			throw new RuntimeException("Role not found in session");
 		}
-		log.info("role received by {} is : {} , with url : {}",registrationId,roleParam,request.getRequestURI());
-		Role role;
 
+		log.info("Role received by {} is : {} , with url : {}",registrationId,roleParam,request.getRequestURI());
+
+		Role role;
 		try {
 			role = Role.valueOf(roleParam);
 		} catch (Exception e) {
@@ -61,7 +62,6 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 		}
 
 
-		//Got the user
 		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role,
 				accessToken);
 
