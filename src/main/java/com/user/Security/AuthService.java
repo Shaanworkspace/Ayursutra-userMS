@@ -38,12 +38,13 @@ public class AuthService {
 	public ResponseEntity<LoginResponse> handleOAuth2LoginRequest(
 			OAuth2User oAuth2User,
 			String registrationId,
-			Role role
+			Role role,
+			String accessToken
 	) {
 
 		log.info("handleOAuth2LoginReuqest with user :{} and role : {}",oAuth2User,role);
 		// Register / Fetch user
-		User user = findOrCreateUser(oAuth2User, registrationId,role);
+		User user = findOrCreateUser(oAuth2User, registrationId,role,accessToken);
 
 		// Generate JWT
 		String jwt = jwtUtil.generateUserToServiceToken(user,role);
@@ -119,81 +120,59 @@ public class AuthService {
 			default -> throw new IllegalStateException("Unexpected role: " + role);
 		}
 	}
-
 	private User findOrCreateUser(
 			OAuth2User oAuth2User,
 			String registrationId,
-			Role role) {
-		AuthProviderName authProviderName =
-				authUtil.returnAuthProviderName(registrationId);
+			Role role,
+			String accessToken) {
 
-		String providerId =
-				authUtil.getProviderIdFromUser(oAuth2User, registrationId);
+		AuthProviderName authProviderName = authUtil.returnAuthProviderName(registrationId);
+		String providerId = authUtil.getProviderIdFromUser(oAuth2User, registrationId);
 
 		String email = oAuth2User.getAttribute("email");
 
-		User user =
-				userRepository
-						.findByOauthProviderIdAndOauthProviderName(
-								providerId,
-								authProviderName
-						)
-						.orElse(null);
+		if ((email == null || email.isBlank()) && "github".equalsIgnoreCase(registrationId)) {
+			log.info("Email missing in GitHub attributes, calling GitHub API with token...");
+			email = authUtil.fetchGitHubEmailUsingToken(accessToken);
+		}
 
+		if (email == null || email.isBlank()) {
+			log.info("Email null, attempting fallback fetch for provider: {}", registrationId);
+			email = authUtil.getProviderEmailFromUser(oAuth2User, registrationId, providerId);
+		}
+
+
+		if (email == null || !email.contains("@")) {
+			log.error("Invalid email fetched from {}: {}", registrationId, email);
+			throw new IllegalArgumentException("Could not retrieve a valid email address. Please make your email primary/public in " + registrationId);
+		}
+
+		// 3. Database Checks
+		User user = userRepository.findByOauthProviderIdAndOauthProviderName(providerId, authProviderName).orElse(null);
 		if (user != null) {
 			return userService.addRoleToExistingUser(user, role);
 		}
 
-		User userByEmail =
-				userRepository.findByEmail(email).orElse(null);
-
+		User userByEmail = userRepository.findByEmail(email).orElse(null);
 		if (userByEmail != null) {
-			log.info(
-					"Email already registered with another provider : {}",email
-			);
+			log.info("Email already registered with another provider : {}", email);
 			return userService.addRoleToExistingUser(userByEmail, role);
 		}
 
-		// ---- Get new Email By Platform----
-		String fetchEmail =
-				authUtil.getProviderEmailFromUser(
-						oAuth2User,
-						registrationId,
-						providerId
-				);
+		UserResponse userResponse = userService.registerUser(
+				RegisterRequest.builder()
+						.email(email)
+						.oauthProviderName(authProviderName)
+						.oauthProviderId(providerId)
+						.password(passwordEncoder.encode(email))
+						.firstName(authUtil.getFirstNameFromUser(oAuth2User, registrationId))
+						.lastName(authUtil.getLastNameFromUser(oAuth2User, registrationId))
+						.approvalStatus(ApprovalStatus.APPROVED)
+						.role(role)
+						.build()
+		);
 
-		if (!fetchEmail.endsWith("@gmail.com")) {
-			throw new IllegalArgumentException("Invalid email");
-		}
-
-		// Decide status approval while register
-		UserResponse userResponse =
-				userService.registerUser(
-						RegisterRequest.builder()
-								.email(fetchEmail)
-								.password(passwordEncoder.encode(fetchEmail))
-								.firstName(
-										authUtil.getFirstNameFromUser(
-												oAuth2User,
-												registrationId
-										)
-								)
-								.lastName(
-										authUtil.getLastNameFromUser(
-												oAuth2User,
-												registrationId
-										)
-								)
-								.approvalStatus(
-										ApprovalStatus.APPROVED
-								)
-								.role(role)
-								.build()
-				);
-
-		return userRepository
-				.findById(userResponse.getId())
-				.orElseThrow();
+		return userRepository.findById(userResponse.getId()).orElseThrow();
 	}
 
 }

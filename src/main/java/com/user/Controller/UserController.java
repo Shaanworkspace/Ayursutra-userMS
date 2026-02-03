@@ -65,6 +65,8 @@ public class UserController {
 		// Redirect in the SAME session to OAuth2
 		response.sendRedirect("/oauth2/authorization/" + provider);
 	}
+
+
 	@PostMapping("/register")
 	@ResponseStatus(HttpStatus.CREATED)
 	public UserResponse register(@RequestBody RegisterRequest request) {

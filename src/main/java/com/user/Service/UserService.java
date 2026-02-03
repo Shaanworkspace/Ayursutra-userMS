@@ -30,7 +30,6 @@ public class UserService implements UserDetailsService {
 	private final TherapistClient therapistClient;
 	private final UserRepository userRepository;
 
-	private final JwtUtil jwtUtil;
 
 	public UserResponse registerUser(RegisterRequest request) {
 
@@ -47,6 +46,8 @@ public class UserService implements UserDetailsService {
 				.email(request.getEmail())
 				.firstName(request.getFirstName())
 				.lastName(request.getLastName())
+				.oauthProviderId(request.getOauthProviderId())
+				.oauthProviderName(request.getOauthProviderName())
 				.password(request.getPassword())
 				.roles(Set.of(role));
 

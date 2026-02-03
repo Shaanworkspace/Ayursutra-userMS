@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -25,6 +27,7 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 	private final AuthService authService;
 	private final ObjectMapper objectMapper;
+	private final OAuth2AuthorizedClientService authorizedClientService;
 	// ye method Github ya google se aay data ko (jo ki in the form of token h usko extract krega)
 	@Override
 	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
@@ -33,7 +36,15 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 		// Like github , google, linkedin
 		String registrationId = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
-
+		OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+				registrationId,
+				oAuth2AuthenticationToken.getName()
+		);
+		String accessToken = null;
+		if (client != null && client.getAccessToken() != null) {
+			accessToken = client.getAccessToken().getTokenValue();
+			log.info("Access Token successfully extracted for {}", registrationId);
+		}
 		String roleParam =
 				(String) request.getSession().getAttribute("OAUTH_ROLE");
 
@@ -51,7 +62,8 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 
 
 		//Got the user
-		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role);
+		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role,
+				accessToken);
 
 		log.info("Got login response in OAuthSuccessHandler : {}",loginResponse);
 		String payload = objectMapper.writeValueAsString(loginResponse.getBody());

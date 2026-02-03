@@ -4,8 +4,17 @@ import com.user.Enum.AuthProviderName;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.List;
+import java.util.Map;
 
 @Component
 @Slf4j
@@ -37,9 +46,10 @@ public class AuthUtil {
 		return providerId;
 	}
 
+
 	public String getProviderEmailFromUser(OAuth2User oAuth2User, String registrationId,String providerId) {
 		String email = oAuth2User.getAttribute("email");
-		if(email!=null || !email.isBlank()){
+		if (email != null && !email.isBlank()) {
 			return email;
 		}
 		return switch (registrationId.toLowerCase()){
@@ -48,7 +58,41 @@ public class AuthUtil {
 			default -> providerId;
 		};
 	}
+	public String fetchGitHubEmailUsingToken(String accessToken) {
+		String githubApiUrl = "https://api.github.com/user/emails";
 
+		// Headers taiyar karna
+		HttpHeaders headers = new HttpHeaders();
+		headers.setBearerAuth(accessToken);
+		headers.set("Accept", "application/vnd.github+json");
+
+		HttpEntity<String> entity = new HttpEntity<>(headers);
+		RestTemplate restTemplate = new RestTemplate();
+
+		try {
+			log.info("GitHub API se private email fetch kar rahe hain...");
+			ResponseEntity<List> response = restTemplate.exchange(
+					githubApiUrl,
+					HttpMethod.GET,
+					entity,
+					List.class
+			);
+
+			List<Map<String, Object>> emailList = response.getBody();
+
+			if (emailList != null) {
+				for (Map<String, Object> emailObj : emailList) {
+					// Hum primary email dhoond rahe hain
+					if ((boolean) emailObj.get("primary")) {
+						return (String) emailObj.get("email");
+					}
+				}
+			}
+		} catch (Exception e) {
+			log.error("GitHub API se email lene mein error aayi: {}", e.getMessage());
+		}
+		return null;
+	}
 	public String getLastNameFromUser(OAuth2User oAuth2User, String registrationId) {
 
 		return switch (registrationId.toLowerCase()) {
