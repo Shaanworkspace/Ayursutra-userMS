@@ -118,11 +118,18 @@
             <version>0.12.5</version>
             <scope>runtime</scope>
         </dependency>
+
+
     </dependencies>
 
     <build>
         <plugins>
 
+            <!--        Deploy-->
+            <plugin>
+                <groupId>org.graalvm.buildtools</groupId>
+                <artifactId>native-maven-plugin</artifactId>
+            </plugin>
             <!-- Compiler Plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
