@@ -1,4 +1,5 @@
 package com.user.AWS;
+
 import com.amazonaws.serverless.exceptions.ContainerInitializationException;
 import com.amazonaws.serverless.proxy.model.AwsProxyRequest;
 import com.amazonaws.serverless.proxy.model.AwsProxyResponse;
@@ -13,19 +14,17 @@ import java.io.OutputStream;
 
 public class StreamLambdaHandler implements RequestStreamHandler {
 	private static SpringBootLambdaContainerHandler<AwsProxyRequest, AwsProxyResponse> handler;
+
 	static {
 		try {
-			// Aapki Main Application class ka naam yahan aayega
-			handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(UserMsApplication.class);
+			handler = SpringBootLambdaContainerHandler.getAwsProxyHandler(UserMsApplication.class); // UserApplication aapki main class hai
 		} catch (ContainerInitializationException e) {
-			e.printStackTrace();
-			throw new RuntimeException("Could not initialize Spring Boot application", e);
+			throw new RuntimeException("Failed to initialize Spring Boot", e);
 		}
 	}
 
 	@Override
-	public void handleRequest(InputStream inputStream, OutputStream outputStream, Context context)
-			throws IOException {
-		handler.proxyStream(inputStream, outputStream, context);
+	public void handleRequest(InputStream input, OutputStream output, Context context) throws IOException {
+		handler.proxyStream(input, output, context);
 	}
 }
