@@ -36,12 +36,10 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       # 4. Build and push to BOTH Docker Hub and AWS ECR
-      - name: Build and push Docker images
+      - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64
           push: true
-          # Tags mein dhyan dena, user-service wahi hona chahiye jo ECR mein banaya hai
-          tags: |
-            shaanyadav/user-service:latest
-            ${{ steps.login-ecr.outputs.registry }}/user-service:latest
+          tags: ${{ steps.login-ecr.outputs.registry }}/user-service:latest
