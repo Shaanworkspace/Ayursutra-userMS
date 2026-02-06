@@ -1,12 +1,8 @@
-# Build stage
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
-WORKDIR /app
-COPY . .
-RUN mvn -B clean package -DskipTests
+# Official AWS Lambda Java 21 base image (Ye mandatory hai)
+FROM public.ecr.aws/lambda/java:21
 
-# Runtime stage
-FROM eclipse-temurin:21-jdk-alpine
-WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
-EXPOSE 8086
-ENTRYPOINT ["java","-jar","app.jar"]
+# Aapka JAR copy karo (target folder se)
+COPY target/*.jar ${LAMBDA_TASK_ROOT}/app.jar
+
+# Handler class (Ye class aapko banana padega, niche code diya hai)
+CMD ["com.user.StreamLambdaHandler::handleRequest"]
