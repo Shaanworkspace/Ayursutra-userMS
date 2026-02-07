@@ -29,56 +29,121 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 	private final ObjectMapper objectMapper;
 	private final OAuth2AuthorizedClientService authorizedClientService;
 
+//	@Override
+//	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+//		OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
+//		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+//
+//		// Like github , google, linkedin
+//		String registrationId = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
+//		OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
+//				registrationId,
+//				oAuth2AuthenticationToken.getName()
+//		);
+//		String accessToken = null;
+//		if (client != null && client.getAccessToken() != null) {
+//			accessToken = client.getAccessToken().getTokenValue();
+//			log.info("Access Token successfully extracted for {}", registrationId);
+//		}
+//		String roleParam =
+//				(String) request.getSession().getAttribute("OAUTH_ROLE");
+//
+//		if (roleParam == null) {
+//			throw new RuntimeException("Role not found in session");
+//		}
+//
+//		log.info("Role received by {} is : {} , with url : {}",registrationId,roleParam,request.getRequestURI());
+//
+//		Role role;
+//		try {
+//			role = Role.valueOf(roleParam);
+//		} catch (Exception e) {
+//			throw new RuntimeException("Invalid or missing role in OAuth request");
+//		}
+//
+//
+//		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role,
+//				accessToken);
+//
+//		log.info("Got login response in OAuthSuccessHandler : {}",loginResponse);
+//		String payload = objectMapper.writeValueAsString(loginResponse.getBody());
+//
+//		response.setContentType("text/html;charset=UTF-8");
+//
+//		String html = """
+//        <script>
+//          if (window.opener) {
+//            window.opener.postMessage(%s, "*");
+//            window.close();
+//          }
+//        </script>
+//        """.formatted(payload);
+//
+//		response.getWriter().write(html);
+//	}
+
 	@Override
-	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-		OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
-		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+	public void onAuthenticationSuccess(
+			HttpServletRequest request,
+			HttpServletResponse response,
+			Authentication authentication
+	) throws IOException {
 
-		// Like github , google, linkedin
-		String registrationId = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
-		OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
-				registrationId,
-				oAuth2AuthenticationToken.getName()
-		);
-		String accessToken = null;
-		if (client != null && client.getAccessToken() != null) {
-			accessToken = client.getAccessToken().getTokenValue();
-			log.info("Access Token successfully extracted for {}", registrationId);
-		}
-		String roleParam =
-				(String) request.getSession().getAttribute("OAUTH_ROLE");
-
-		if (roleParam == null) {
-			throw new RuntimeException("Role not found in session");
-		}
-
-		log.info("Role received by {} is : {} , with url : {}",registrationId,roleParam,request.getRequestURI());
-
-		Role role;
 		try {
-			role = Role.valueOf(roleParam);
-		} catch (Exception e) {
-			throw new RuntimeException("Invalid or missing role in OAuth request");
-		}
+			OAuth2AuthenticationToken token = (OAuth2AuthenticationToken) authentication;
+			OAuth2User oAuth2User = (OAuth2User) token.getPrincipal();
 
+			String registrationId = token.getAuthorizedClientRegistrationId();
 
-		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role,
-				accessToken);
+			String roleParam =
+					(String) request.getSession().getAttribute("OAUTH_ROLE");
 
-		log.info("Got login response in OAuthSuccessHandler : {}",loginResponse);
-		String payload = objectMapper.writeValueAsString(loginResponse.getBody());
+			if (roleParam == null) {
+				throw new RuntimeException("Role not found in session");
+			}
 
-		response.setContentType("text/html;charset=UTF-8");
+			Role role = Role.valueOf(roleParam);
 
-		String html = """
+			ResponseEntity<LoginResponse> loginResponse =
+					authService.handleOAuth2LoginRequest(
+							oAuth2User,
+							registrationId,
+							role,
+							null
+					);
+
+			String payload =
+					objectMapper.writeValueAsString(loginResponse.getBody());
+
+			response.setContentType("text/html;charset=UTF-8");
+
+			response.getWriter().write("""
         <script>
           if (window.opener) {
             window.opener.postMessage(%s, "*");
             window.close();
           }
         </script>
-        """.formatted(payload);
+        """.formatted(payload));
 
-		response.getWriter().write(html);
+		} catch (Exception ex) {
+
+			log.error("OAuth2 failure", ex);
+
+			response.setContentType("text/html;charset=UTF-8");
+
+			response.getWriter().write("""
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({
+              error: true,
+              message: "%s"
+            }, "*");
+            window.close();
+          }
+        </script>
+        """.formatted(ex.getMessage()));
+		}
 	}
+
 }
