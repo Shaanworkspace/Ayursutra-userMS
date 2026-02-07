@@ -10,7 +10,6 @@ services.therapist.url=http://localhost:8083
 services.user.url=http://localhost:8086
 services.api.url=http://localhost:8085
 
-github.client-id=Ov23liKflakUNghLl0Ox
-github.client-secret=aea54b9be17ea06ecddf204b33d6c3648dd486f0
-
-jwt.secretkeyENV = asdfkljhasfhkdjlashfjksdkfhioqwteiruncvzxmiye
+github.client-id=Ov23
+github.client-secret=aea
+jwtSecretKeyENV = asdfklj
