@@ -1,14 +1,11 @@
-# Build stage
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
-WORKDIR /app
-COPY . .
-RUN mvn -B clean package -DskipTests
+FROM eclipse-temurin:21-jre-jammy
 
-# Runtime stage
-FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
-COPY --from=builder /app/target/*.jar app.jar
+
+COPY target/*.jar app.jar
+
+ENV JAVA_OPTS="-Xms256m -Xmx512m"
+
 EXPOSE 8086
-ENTRYPOINT ["java","-jar","app.jar"]
 
-
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
