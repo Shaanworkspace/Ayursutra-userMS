@@ -55,6 +55,7 @@ public class SecurityConfig {
 								"/api/user/health",
 								"/api/user/oauth2/start/**",
 								"/api/user",
+								"/api/user/oauth2/**",
 								"/oauth2/**",
 								"/api/user/doctor/**",
 								"/api/user/therapist/**",

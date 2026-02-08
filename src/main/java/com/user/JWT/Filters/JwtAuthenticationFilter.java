@@ -29,7 +29,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	private final UserRepository userRepository;
 	private final JwtUtil jwtUtil;
 
+	@Override
+	protected boolean shouldNotFilter(HttpServletRequest request) {
+		String path = request.getRequestURI();
 
+		return path.startsWith("/api/user/oauth2")
+				|| path.startsWith("/oauth2")
+				|| path.startsWith("/login/oauth2")
+				|| path.startsWith("/swagger-ui")
+				|| path.startsWith("/v3/api-docs")
+				|| path.startsWith("/api/user/login")
+				|| path.startsWith("/api/user/register")
+				|| path.startsWith("/api/user/health");
+	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -37,6 +49,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		log.info("Jwt Filter Applied to Incoming Request : {}",request.getRequestURI());
 
 		final String requestHeader = request.getHeader("Authorization");
+
+
+
 		if(requestHeader==null || !requestHeader.startsWith("Bearer")){
 			log.info("User : Header is null for Incoming Request : {}",request.getRequestURI());
 			filterChain.doFilter(request,response);
@@ -44,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		}
 
 		// Token will split in two parts we will take the 1st index -> means second part
-		String token = requestHeader.split("Bearer ")[1];
+		String token = requestHeader.substring(7);
 		String subject = jwtUtil.getSubjectFromToken(token);
 		log.info("We got the Subject from JWT : {}",subject);
 
@@ -62,7 +77,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 		} else {
 			log.info("This Request Have Jwt from User");
 			// USER TOKEN → DB REQUIRED
-			User user = userRepository.findByEmail(subject).orElseThrow();
+			User user = userRepository.findByEmail(subject)
+					.orElseThrow(() -> {
+						log.warn("JWT valid but user not found: {}", subject);
+						return new RuntimeException("User not found");
+					});
+
 			UsernamePasswordAuthenticationToken auth =
 					new UsernamePasswordAuthenticationToken(
 							user,
