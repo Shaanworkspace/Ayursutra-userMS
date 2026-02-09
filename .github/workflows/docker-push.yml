@@ -54,6 +54,8 @@ jobs:
               -e DB_DDL="${{ secrets.DB_DDL }}" \
               -e GITHUB_CLIENT_ID="${{ secrets.GITHUBCLIENTID }}" \
               -e GITHUB_CLIENT_SECRET="${{ secrets.GITHUBCLIENTSECRET }}" \
+              -e GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}" \
+              -e GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}" \
               -e jwtSecretKeyENV="${{ secrets.JWTSECRETKEYENV }}" \
               -e JAVA_OPTS="-Xms256m -Xmx512m" \
               ${{ secrets.DOCKERHUB_USERNAME }}/user-service:latest

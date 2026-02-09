@@ -29,58 +29,6 @@ public class oAuth2SuccessHandler implements AuthenticationSuccessHandler {
 	private final ObjectMapper objectMapper;
 	private final OAuth2AuthorizedClientService authorizedClientService;
 
-//	@Override
-//	public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-//		OAuth2AuthenticationToken oAuth2AuthenticationToken = (OAuth2AuthenticationToken) authentication;
-//		OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-//
-//		// Like github , google, linkedin
-//		String registrationId = oAuth2AuthenticationToken.getAuthorizedClientRegistrationId();
-//		OAuth2AuthorizedClient client = authorizedClientService.loadAuthorizedClient(
-//				registrationId,
-//				oAuth2AuthenticationToken.getName()
-//		);
-//		String accessToken = null;
-//		if (client != null && client.getAccessToken() != null) {
-//			accessToken = client.getAccessToken().getTokenValue();
-//			log.info("Access Token successfully extracted for {}", registrationId);
-//		}
-//		String roleParam =
-//				(String) request.getSession().getAttribute("OAUTH_ROLE");
-//
-//		if (roleParam == null) {
-//			throw new RuntimeException("Role not found in session");
-//		}
-//
-//		log.info("Role received by {} is : {} , with url : {}",registrationId,roleParam,request.getRequestURI());
-//
-//		Role role;
-//		try {
-//			role = Role.valueOf(roleParam);
-//		} catch (Exception e) {
-//			throw new RuntimeException("Invalid or missing role in OAuth request");
-//		}
-//
-//
-//		ResponseEntity<LoginResponse> loginResponse = authService.handleOAuth2LoginRequest(oAuth2User,registrationId, role,
-//				accessToken);
-//
-//		log.info("Got login response in OAuthSuccessHandler : {}",loginResponse);
-//		String payload = objectMapper.writeValueAsString(loginResponse.getBody());
-//
-//		response.setContentType("text/html;charset=UTF-8");
-//
-//		String html = """
-//        <script>
-//          if (window.opener) {
-//            window.opener.postMessage(%s, "*");
-//            window.close();
-//          }
-//        </script>
-//        """.formatted(payload);
-//
-//		response.getWriter().write(html);
-//	}
 
 	@Override
 	public void onAuthenticationSuccess(
